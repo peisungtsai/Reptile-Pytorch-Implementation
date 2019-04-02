@@ -15,7 +15,7 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 
-from supervised_reptile.util import list_dir, list_files
+from util import list_dir, list_files
 
 # Default transforms
 transform_image = transforms.Compose([
