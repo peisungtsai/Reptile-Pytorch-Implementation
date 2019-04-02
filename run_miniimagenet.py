@@ -5,11 +5,11 @@ Train a model on miniImageNet.
 import random
 import torch
 
-from supervised_reptile.args import argument_parser, train_kwargs
-from supervised_reptile.eval import do_evaluation
-from supervised_reptile.image_loader import read_dataset
-from supervised_reptile.train import train
-from supervised_reptile.util import load_checkpoint
+from args import argument_parser, train_kwargs
+from eval import do_evaluation
+from image_loader import read_dataset
+from train import train
+from util import load_checkpoint
 
 DATA_DIR='data/miniimagenet'   
 
