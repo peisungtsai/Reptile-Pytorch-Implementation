@@ -8,8 +8,8 @@ import torch.nn.functional as F
 import torch.nn.init as init
 from torch.autograd import Variable
 
-from supervised_reptile.args import argument_parser
-from supervised_reptile.adamW import AdamW
+from args import argument_parser
+from adamW import AdamW
 
 args = argument_parser().parse_args() 
     
