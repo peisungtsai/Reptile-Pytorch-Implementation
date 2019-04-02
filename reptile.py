@@ -10,8 +10,8 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, RandomSampler
 
-from supervised_reptile.variables import Variable_, interpolate_vars, average_vars, subtract_vars, add_vars, scale_vars
-from supervised_reptile.models import get_loss, predict_label, clone_model, get_optimizer
+from variables import Variable_, interpolate_vars, average_vars, subtract_vars, add_vars, scale_vars
+from models import get_loss, predict_label, clone_model, get_optimizer
 
 class Reptile:
     """
