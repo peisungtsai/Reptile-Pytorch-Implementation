@@ -15,9 +15,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tensorboardX import SummaryWriter
 
-from supervised_reptile.reptile import Reptile, FOML
-#from .variables import weight_decay
-from supervised_reptile.util import save_checkpoint, plot_accuracy
+from reptile import Reptile, FOML
+from util import save_checkpoint, plot_accuracy
 
 # pylint: disable=R0913,R0914
 def train(train_set,
