@@ -6,9 +6,9 @@ import numpy as np
 import tqdm
 import pandas as pd
 
-from supervised_reptile.reptile import Reptile
-from supervised_reptile.args import argument_parser, evaluate_kwargs
-from supervised_reptile.util import mean_confidence_interval
+from reptile import Reptile
+from args import argument_parser, evaluate_kwargs
+from util import mean_confidence_interval
 
 args = argument_parser().parse_args()
 eval_kwargs = evaluate_kwargs(args)
