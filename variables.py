@@ -5,36 +5,6 @@ Tools for manipulating sets of variables.
 import numpy as np
 import torch
 
-#import tensorflow as tf
-#
-#def subtract_vars(var_seq_1, var_seq_2):
-#    """
-#    Subtract one variable sequence from another.
-#    """
-#    return [v1 - v2 for v1, v2 in zip(var_seq_1, var_seq_2)]
-#
-#def add_vars(var_seq_1, var_seq_2):
-#    """
-#    Add two variable sequences.
-#    """
-#    return [v1 + v2 for v1, v2 in zip(var_seq_1, var_seq_2)]
-#
-#def scale_vars(var_seq, scale):
-#    """
-#    Scale a variable sequence.
-#    """
-#    return [v * scale for v in var_seq]
-#
-#def weight_decay(rate, variables=None):
-#    """
-#    Create an Op that performs weight decay.
-#    """
-#    if variables is None:
-#        variables = tf.trainable_variables()
-#    ops = [tf.assign(var, var * rate) for var in variables]
-#    return tf.group(*ops)
-
-
 def Variable_(inputs, labels, cuda=False):
     '''
     Make variable cuda depending on the arguments
@@ -63,8 +33,33 @@ def interpolate_vars(old_vars, new_vars, epsilon):
     """
     for param_tensor in new_vars:
         new_vars[param_tensor]  = old_vars[param_tensor] + (new_vars[param_tensor] - old_vars[param_tensor]) * epsilon
-    
     return new_vars
+
+def subtract_vars(new_vars, old_vars):
+    """
+    Subtract one variable sequence from another.
+    
+    """
+    for param_tensor in new_vars:
+        new_vars[param_tensor]  = new_vars[param_tensor] - old_vars[param_tensor] 
+    return new_vars
+
+def add_vars(var_1, var_2):
+    """
+    Add two variable sequences.
+    """
+    for param_tensor in var_1:
+        var_1[param_tensor]  = var_1[param_tensor] + var_2[param_tensor] 
+    return var_1
+
+def scale_vars(var, epsilon):
+    """
+    Scale a variable sequence.
+    """
+    for param_tensor in var:
+        var[param_tensor]  = var[param_tensor] * epsilon
+    return var
+
 
 #def import(model, state_dict, cuda):
 #    model.load_state_dict(state_dict)

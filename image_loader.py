@@ -10,6 +10,7 @@ sub-directory per WordNet ID.
 import os
 import copy
 import numpy as np
+import random
 from PIL import Image
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
@@ -19,12 +20,14 @@ from supervised_reptile.util import list_dir, list_files
 # Default transforms
 transform_image = transforms.Compose([
     transforms.ToTensor()
+#    ,transforms.Normalize(mean=[0.92206, 0.92206, 0.92206], std=[0.08426, 0.08426, 0.08426])
 ])
 
 def read_image(path, rotation=0):
     img = Image.open(path, mode='r').convert('RGB')
 #    img = Image.open(path, mode='r').convert('L')
-    img = img.resize((80, 80)).rotate(rotation)
+    img = img.resize((84, 84))
+    img = img.rotate(rotation)
     img = transform_image(img)
     return img
 
@@ -56,11 +59,12 @@ class FewShot(Dataset):
 class get_task:   
     def get_random_task_split(self, num_classes=5, train_shots=10, test_shots=0):
         train_samples = []
-        test_samples = []
-        sample_indices = np.random.choice(len(self), num_classes, replace=False)
-        for batch_idx, idx in enumerate(sample_indices):
+        test_samples = []       
+        for batch_idx, idx in enumerate(random.sample(range(len(self)), num_classes)):
             class_dir, paths = self.class_list[idx]
-            for i, path in enumerate(np.random.choice(paths, train_shots + test_shots, replace=False)):
+            samples = random.sample(paths, len(paths))
+            random.shuffle(samples)
+            for i, path in enumerate(samples[:train_shots+test_shots]):
                 new_path = {}
                 new_path.update(path)
                 new_path['batch_idx'] = batch_idx
@@ -68,9 +72,29 @@ class get_task:
                     train_samples.append(new_path)
                 else:
                     test_samples.append(new_path)
+
         train_task = FewShot(train_samples, parent=self)
         test_task = FewShot(test_samples, parent=self)
-        return train_task, test_task
+        return train_task, test_task    
+    
+#class get_task:   
+#    def get_random_task_split(self, num_classes=5, train_shots=10, test_shots=0):
+#        train_samples = []
+#        test_samples = []       
+#        for batch_idx, idx in enumerate(random.sample(range(len(self)), num_classes)):
+#            class_dir, paths = self.class_list[idx]
+#            for i, path in enumerate(random.sample(paths, train_shots+test_shots)):
+#                new_path = {}
+#                new_path.update(path)
+#                new_path['batch_idx'] = batch_idx
+#                if i < train_shots:
+#                    train_samples.append(new_path)
+#                else:
+#                    test_samples.append(new_path)
+#        random.shuffle(train_samples)            
+#        train_task = FewShot(train_samples, parent=self)
+#        test_task = FewShot(test_samples, parent=self)
+#        return train_task, test_task   
 
 class MiniimagenetFolder(get_task):
     
@@ -82,7 +106,7 @@ class MiniimagenetFolder(get_task):
             class_dir = os.path.join(dir_path, subfolder)
             class_idx = len(_clases)
             _clases[class_dir] = []
-            for filename in list_files(class_dir, '.JPEG'): #[f for f in os.listdir(class_dir) if f.endswith('.JPEG')]
+            for filename in list_files(class_dir, '.JPEG'): 
                 _clases[class_dir].append({
                     'path': os.path.join(class_dir, filename),
                     'class_idx': class_idx,
@@ -136,7 +160,7 @@ def SplitClasses(omniglot, validation=0.1):
     '''
     n_val = int(validation * len(omniglot))
     indices = np.arange(len(omniglot))
-    np.random.shuffle(indices)
+    random.shuffle(indices)
     
     train_set = omniglot
     test_set = copy.deepcopy(omniglot)

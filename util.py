@@ -7,14 +7,21 @@ Created on Mon Dec 24 09:36:06 2018
 """
 import os
 import re
+import numpy as np
+import scipy as sp
+from scipy import stats
+
 import torch
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-def save_checkpoint(model_state, op_state, check_dir, meta_iteration):
+def save_checkpoint(model_state, op_state, check_dir, meta_iteration, cur_meta_step_size, accuracy_tracking):
     state = {'meta_iteration': meta_iteration, 
              'state_dict': model_state,
-             'optimizer': op_state}
+             'optimizer': op_state,
+             'cur_meta_step_size': cur_meta_step_size,
+             'accuracy_tracking': accuracy_tracking
+             }
     check_file = os.path.join(check_dir, '{}-{}.pth'.format(check_dir, meta_iteration))
     torch.save(state, check_file)
 
@@ -33,15 +40,17 @@ def load_checkpoint(check_dir):
     if os.path.isfile(latest_file):
         print("\n=> loading checkpoint '{}'".format(latest_file))
         checkpoint = torch.load(latest_file)
-        meta_iteration = checkpoint['meta_iteration']
         model_state = checkpoint['state_dict']
         op_state = checkpoint['optimizer']
+        meta_iteration = checkpoint['meta_iteration']
+        cur_meta_step_size = checkpoint['cur_meta_step_size']
+        accuracy_tracking = checkpoint['accuracy_tracking']
         print("\n=> loaded checkpoint '{}' (meta_iteration {})\n"
                   .format(latest_file, checkpoint['meta_iteration']))
     else:
         print("\n=> no checkpoint found at '{}'".format(check_dir))
 
-    return model_state, op_state, meta_iteration
+    return model_state, op_state, meta_iteration, cur_meta_step_size, accuracy_tracking
 
 
 def list_dir(root, prefix=False):
@@ -86,25 +95,38 @@ def list_files(root, suffix, prefix=False):
 
     return files
 
-def plot_accuracy(data, x, y, window, filepath, title=''):
-    mean = pd.DataFrame(data[y].rolling(window).mean()).rename(index=str, columns={y: 'average'})
-    std = pd.DataFrame(data[y].rolling(window).std()).rename(index=str, columns={y: 'std'})
-    mean = mean.reset_index()
-    std = std.reset_index()
+def mean_confidence_interval(data, confidence=0.95):
+    n = len(data)
+    m, se = np.mean(data), sp.stats.sem(data)
+    me = se * sp.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, me
+
+def plot_accuracy(data, window, filepath, title=''):
+    test_mean = pd.DataFrame(data['test_accuracy'].rolling(window).mean()).rename(index=str, columns={'test_accuracy': 'Rolling Test Accuracy'})
+    test_std = pd.DataFrame(data['test_accuracy'].rolling(window).std()).rename(index=str, columns={'test_accuracy': 'Rolling Test STD'})
+    train_mean = pd.DataFrame(data['train_accuracy'].rolling(window).mean()).rename(index=str, columns={'train_accuracy': 'Rolling Train Accuracy'})
+    train_std = pd.DataFrame(data['train_accuracy'].rolling(window).std()).rename(index=str, columns={'train_accuracy': 'Rolling Train STD'})    
+    df_rolling = test_mean.join(test_std).join(train_mean).join(train_std)
+    df_rolling = df_rolling.reset_index()
     data = data.reset_index()
-    df_plot = data[[x, y]].join(mean[['average']]).join(std[['std']])
+    df_plot = data[['meta_iteration']].join(df_rolling)
+    
     pdf = PdfPages(filepath) 
     
-    chart = df_plot.plot(x=x, y=['average'], title=title)
+    chart = df_plot.plot(x='meta_iteration', y=['Rolling Test Accuracy'], title=title)
     fig = chart.get_figure()
     pdf.savefig(fig)
     
-    chart = df_plot.plot(x=x, y=['std'], title=title)
+    chart = df_plot.plot(x='meta_iteration', y=['Rolling Train Accuracy','Rolling Test Accuracy'], title=title)
+    fig = chart.get_figure()
+    pdf.savefig(fig)
+    
+    chart = df_plot.plot(x='meta_iteration', y=['Rolling Train STD','Rolling Test STD'], title=title)
     fig = chart.get_figure()
     pdf.savefig(fig)  
     pdf.close()
     
 #save_dir = '/Users/peisungtsai/supervised-reptile-pytorch/ckpt_m55'
 #accuracies = pd.read_pickle(os.path.join(save_dir, r'accuracies.pkl'))
-#plot_accuracy(data=accuracies, x='meta_iteration', y='test_accuracy', window=100, filepath=os.path.join(save_dir, r'accuracy.pdf'), title='MiniimageNet 5-shot 5-way')
+#plot_accuracy(data=accuracies, window=1000, filepath=os.path.join(save_dir, r'accuracy.pdf'), title='MiniimageNet 5-shot 5-way')
 
